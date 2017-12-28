@@ -62,66 +62,49 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        actionBar = getSupportActionBar();
-        actionBar.hide();
+        actionBarShow(false);
 
-        mEmptylayout = (LinearLayout) findViewById(R.id.welcomeScreen);
         ListView listview = (ListView) findViewById(R.id.main_list);
+        mEmptylayout = (LinearLayout) findViewById(R.id.welcomeScreen);
         listview.setEmptyView(mEmptylayout);
 
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
+//        Adapter operations
         mAdapter = new MyAdapter(this, new ArrayList<newsData>());
         listview.setAdapter(mAdapter);
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                final newsData currentnews = mAdapter.getItem(i);
+                String description_of_news = currentnews.getDescription();
+                speakWord(description_of_news);
+            }
+        });
+        listview.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                final newsData currentnews = mAdapter.getItem(i);
+                Uri earthquakeuri = Uri.parse(currentnews.getUrl());
+                Intent webintent = new Intent(Intent.ACTION_VIEW, earthquakeuri);
+                startActivity(webintent);
+                return true;
+            }
+        });
 
+//        check for TextToSpeech functionality
         Intent checkTTS = new Intent();
         checkTTS.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-        startActivityForResult(checkTTS, 0);
+        startActivityForResult(checkTTS,0);
 
+//        loading data and show using loader
         if (networkInfo != null && networkInfo.isConnected()) {
             LoaderManager loaderManager = getLoaderManager();
             loaderManager.initLoader(LOADER_ID, null, this);
-
-            textToSpeech = new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
-                @Override
-                public void onInit(int status) {
-                    if (status == TextToSpeech.SUCCESS) {
-                        textToSpeech.setPitch(PITCH_VOICE);
-                        textToSpeech.setLanguage(Locale.US);
-                    } else if (status == TextToSpeech.ERROR) {
-                        Toast.makeText(MainActivity.this, "Sorry! Text to Speech failed...", Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-
-            listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    textToSpeech.stop();
-                    final newsData currentnews = mAdapter.getItem(i);
-                    textToSpeech.speak(currentnews.getDescription(), TextToSpeech.QUEUE_ADD, null);
-                }
-            });
-            listview.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-                @Override
-                public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    final newsData currentnews = mAdapter.getItem(i);
-                    Uri earthquakeuri = Uri.parse(currentnews.getUrl());
-                    Intent webintent = new Intent(Intent.ACTION_VIEW, earthquakeuri);
-                    startActivity(webintent);
-                    return true;
-                }
-            });
         } else {
-            actionBar = getSupportActionBar();
-            actionBar.show();
-            mWel = (ImageView) findViewById(R.id.welcomeLogo);
-            mWel_t = (TextView) findViewById(R.id.welcomeText);
-            mWel.setImageResource(R.mipmap.ic_no_internet);
-            mWel_t.setText(R.string.no_net);
-            mWel_t.setTextColor(Color.parseColor("#f44336"));
-            mWel_t.setTextSize(15);
+           actionBarShow(true);
+            noConnection();
         }
     }
 
@@ -132,14 +115,8 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
 
     @Override
     public void onLoadFinished(Loader<List<newsData>> loader, List<newsData> data) {
-        actionBar = getSupportActionBar();
-        actionBar.show();
-        mWel = (ImageView) findViewById(R.id.welcomeLogo);
-        mWel_t = (TextView) findViewById(R.id.welcomeText);
-        mWel.setImageResource(R.mipmap.ic_no_internet);
-        mWel_t.setTextColor(Color.parseColor("#f44336"));
-        mWel_t.setTextSize(15);
-        mWel_t.setText(R.string.no_data);
+        actionBarShow(true);
+        noData();
         mAdapter.clear();
         if (data != null && !data.isEmpty()) {
             showPop();
@@ -181,6 +158,7 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         return super.onOptionsItemSelected(item);
     }
 
+//    My Helping Functions
     public void showPop() {
         LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View v = inflater.inflate(R.layout.help_popup, null);
@@ -188,6 +166,50 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         alert.setPositiveButton("OK", null);
         alert.setView(v);
         alert.show();
+    }
+
+    public void noData(){
+        mWel = (ImageView) findViewById(R.id.welcomeLogo);
+        mWel_t = (TextView) findViewById(R.id.welcomeText);
+        mWel.setImageResource(R.mipmap.ic_no_internet);
+        mWel_t.setTextColor(Color.parseColor("#f44336"));
+        mWel_t.setTextSize(15);
+        mWel_t.setText(R.string.no_data);
+    }
+
+    public void noConnection(){
+        mWel = (ImageView) findViewById(R.id.welcomeLogo);
+        mWel_t = (TextView) findViewById(R.id.welcomeText);
+        mWel.setImageResource(R.mipmap.ic_no_internet);
+        mWel_t.setText(R.string.no_net);
+        mWel_t.setTextColor(Color.parseColor("#f44336"));
+        mWel_t.setTextSize(15);
+    }
+
+    public void actionBarShow(boolean t){
+        if (t){
+            actionBar = getSupportActionBar();
+            actionBar.show();
+        }else {
+            actionBar = getSupportActionBar();
+            actionBar.hide();
+        }
+    }
+
+    public void speakWord(String s){
+        textToSpeech = new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    textToSpeech.setPitch(PITCH_VOICE);
+                    textToSpeech.setLanguage(Locale.US);
+                } else if (status == TextToSpeech.ERROR) {
+                    Toast.makeText(MainActivity.this, "Sorry! Text to Speech failed...", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        textToSpeech.stop();
+        textToSpeech.speak(s, TextToSpeech.QUEUE_ADD, null);
     }
 }
 
