@@ -21,21 +21,27 @@ import android.app.LoaderManager.LoaderCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,11 +54,16 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
     private LinearLayout mEmptylayout;
     private ImageView mWel;
     private TextView mWel_t;
+    private ProgressBar progressBar;
+    private TextView ownerName;
+    private Button refresh;
+    private SwipeRefreshLayout refreshLayout;
     private MyAdapter mAdapter;
     private static final int LOADER_ID = 1;
     private android.support.v7.app.ActionBar actionBar;
     private TextToSpeech textToSpeech;
     private static final float PITCH_VOICE = (float) 1.2;
+    private static final float speech_rate = (float) 0.8;
 
     public static final String LOG_TAG = MainActivity.class.getName();
     private static final String urlnews = "https://newsapi.org/v2/top-headlines?sources=google-news-in&apiKey=1f91dce654074d74a2cf028eacc654b9";
@@ -71,8 +82,31 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
-//        Adapter operations
+//        show pop-up
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPreferences.getBoolean("IS_FIRST_TIME",true)){
+            showPop();
+            sharedPreferences.edit().putBoolean("IS_FIRST_TIME",false).apply();
+        }
+//        initialise TextToSpeech
+        textToSpeech = new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    textToSpeech.setPitch(PITCH_VOICE);
+                    textToSpeech.setSpeechRate(speech_rate);
+                    textToSpeech.setLanguage(Locale.US);
+                } else if (status == TextToSpeech.ERROR) {
+                    Toast.makeText(MainActivity.this, "Sorry! Text to Speech failed...", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+//        Initialise Adapter
         mAdapter = new MyAdapter(this, new ArrayList<newsData>());
+//        for refresh
+        refreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh_pull);
+//        set adapter
         listview.setAdapter(mAdapter);
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -90,6 +124,14 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
                 Intent webintent = new Intent(Intent.ACTION_VIEW, earthquakeuri);
                 startActivity(webintent);
                 return true;
+            }
+        });
+
+//        refresh on pull
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshContent();
             }
         });
 
@@ -119,7 +161,6 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         noData();
         mAdapter.clear();
         if (data != null && !data.isEmpty()) {
-            showPop();
             mAdapter.addAll(data);
         }
     }
@@ -138,6 +179,9 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
+        if (id == R.id.how_use){
+            showPop();
+        }
         if (id == R.id.action_settings) {
             Intent settingIntent = new Intent(this, SettingsActivity.class);
             startActivity(settingIntent);
@@ -158,7 +202,16 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         return super.onOptionsItemSelected(item);
     }
 
-//    My Helping Functions
+//    Helping Functions
+    private void refreshContent(){
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                refreshLayout.setRefreshing(false);
+            }
+        },5000);
+    }
+
     public void showPop() {
         LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View v = inflater.inflate(R.layout.help_popup, null);
@@ -171,19 +224,47 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
     public void noData(){
         mWel = (ImageView) findViewById(R.id.welcomeLogo);
         mWel_t = (TextView) findViewById(R.id.welcomeText);
+        progressBar = (ProgressBar) findViewById(R.id.progresssBar);
+        ownerName = (TextView) findViewById(R.id.ownerName);
+        refresh = (Button) findViewById(R.id.refresh);
         mWel.setImageResource(R.mipmap.ic_no_internet);
         mWel_t.setTextColor(Color.parseColor("#f44336"));
         mWel_t.setTextSize(15);
         mWel_t.setText(R.string.no_data);
+        progressBar.setVisibility(View.INVISIBLE);
+        ownerName.setVisibility(View.INVISIBLE);
+//        refresh
+        refresh.setVisibility(View.VISIBLE);
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recreate();
+            }
+        });
     }
 
     public void noConnection(){
         mWel = (ImageView) findViewById(R.id.welcomeLogo);
         mWel_t = (TextView) findViewById(R.id.welcomeText);
+        progressBar = (ProgressBar) findViewById(R.id.progresssBar);
+        ownerName = (TextView) findViewById(R.id.ownerName);
+        refresh = (Button) findViewById(R.id.refresh);
         mWel.setImageResource(R.mipmap.ic_no_internet);
         mWel_t.setText(R.string.no_net);
         mWel_t.setTextColor(Color.parseColor("#f44336"));
         mWel_t.setTextSize(15);
+        progressBar.setVisibility(View.INVISIBLE);
+        ownerName.setText("Please check your connection or try again later");
+        ownerName.setTextSize(12);
+        ownerName.setTextColor(Color.parseColor("#f44336"));
+//        refresh
+        refresh.setVisibility(View.VISIBLE);
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                recreate();
+            }
+        });
     }
 
     public void actionBarShow(boolean t){
@@ -197,17 +278,6 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
     }
 
     public void speakWord(String s){
-        textToSpeech = new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (status == TextToSpeech.SUCCESS) {
-                    textToSpeech.setPitch(PITCH_VOICE);
-                    textToSpeech.setLanguage(Locale.US);
-                } else if (status == TextToSpeech.ERROR) {
-                    Toast.makeText(MainActivity.this, "Sorry! Text to Speech failed...", Toast.LENGTH_LONG).show();
-                }
-            }
-        });
         textToSpeech.stop();
         textToSpeech.speak(s, TextToSpeech.QUEUE_ADD, null);
     }
