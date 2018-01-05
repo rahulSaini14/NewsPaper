@@ -120,8 +120,8 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
                 final newsData currentnews = mAdapter.getItem(i);
-                Uri earthquakeuri = Uri.parse(currentnews.getUrl());
-                Intent webintent = new Intent(Intent.ACTION_VIEW, earthquakeuri);
+                Uri urin = Uri.parse(currentnews.getUrl());
+                Intent webintent = new Intent(Intent.ACTION_VIEW, urin);
                 startActivity(webintent);
                 return true;
             }
@@ -197,7 +197,7 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
             email.setData(Uri.fromParts("mailto","rahulsaini1499@gmail.com",null));
             email.putExtra(Intent.EXTRA_SUBJECT,"Help me");
             email.putExtra(Intent.EXTRA_TEXT,"I want help for ");
-            startActivity(email);
+            startActivity(Intent.createChooser(email,"Ask for Help..."));
         }
         return super.onOptionsItemSelected(item);
     }
