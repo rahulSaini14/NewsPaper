@@ -38,6 +38,11 @@ public class newsData {
     }
 
     public String getTime() {
-        return time;
+        return timeFormat(time);
+    }
+
+    private static String timeFormat(String time) {
+        String r = time.split("T")[0] + "  " + time.split("T")[1].split("\\+")[0];
+        return r;
     }
 }

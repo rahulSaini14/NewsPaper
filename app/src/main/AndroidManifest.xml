@@ -3,7 +3,7 @@
     package="com.example.android.newspaper">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -12,7 +12,8 @@
         android:roundIcon="@mipmap/icon_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"
+        <activity
+            android:name=".MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,13 +22,17 @@
             </intent-filter>
         </activity>
         <activity android:name=".SettingsActivity">
-            <meta-data android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.android.newspaper.MainActivity"/>
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.android.newspaper.MainActivity" />
         </activity>
         <activity android:name=".aboutus">
-            <meta-data android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.android.newspaper.MainActivity"/>
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.android.newspaper.MainActivity" />
         </activity>
+        <activity android:name=".NewsContent"
+            android:parentActivityName=".MainActivity"></activity>
     </application>
 
 </manifest>

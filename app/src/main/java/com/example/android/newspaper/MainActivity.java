@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -61,9 +62,13 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
     private MyAdapter mAdapter;
     private static final int LOADER_ID = 1;
     private android.support.v7.app.ActionBar actionBar;
-    private TextToSpeech textToSpeech;
-    private static final float PITCH_VOICE = (float) 1.2;
-    private static final float speech_rate = (float) 0.8;
+
+//    Values for news description
+    public static String N_heading;
+    public static String N_descp;
+    public static Drawable N_img;
+    public static String N_link;
+    public static String N_time;
 
     public static final String LOG_TAG = MainActivity.class.getName();
     private static final String urlnews = "https://newsapi.org/v2/top-headlines?sources=google-news-in&apiKey=1f91dce654074d74a2cf028eacc654b9";
@@ -88,20 +93,6 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
             showPop();
             sharedPreferences.edit().putBoolean("IS_FIRST_TIME",false).apply();
         }
-//        initialise TextToSpeech
-        textToSpeech = new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (status == TextToSpeech.SUCCESS) {
-                    textToSpeech.setPitch(PITCH_VOICE);
-                    textToSpeech.setSpeechRate(speech_rate);
-                    textToSpeech.setLanguage(Locale.US);
-                } else if (status == TextToSpeech.ERROR) {
-                    Toast.makeText(MainActivity.this, "Sorry! Text to Speech failed...", Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-
 //        Initialise Adapter
         mAdapter = new MyAdapter(this, new ArrayList<newsData>());
 //        for refresh
@@ -112,17 +103,17 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 final newsData currentnews = mAdapter.getItem(i);
-                String description_of_news = currentnews.getDescription();
-                speakWord(description_of_news);
+                N_heading = currentnews.getTitle();
+                N_descp = currentnews.getDescription();
+                N_link = currentnews.getUrl();
+                N_img = currentnews.getUrlToImage();
+                N_time = currentnews.getTime();
+                newsContent();
             }
         });
         listview.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                final newsData currentnews = mAdapter.getItem(i);
-                Uri urin = Uri.parse(currentnews.getUrl());
-                Intent webintent = new Intent(Intent.ACTION_VIEW, urin);
-                startActivity(webintent);
                 return true;
             }
         });
@@ -135,10 +126,6 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
             }
         });
 
-//        check for TextToSpeech functionality
-        Intent checkTTS = new Intent();
-        checkTTS.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-        startActivityForResult(checkTTS,0);
 
 //        loading data and show using loader
         if (networkInfo != null && networkInfo.isConnected()) {
@@ -277,9 +264,9 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         }
     }
 
-    public void speakWord(String s){
-        textToSpeech.stop();
-        textToSpeech.speak(s, TextToSpeech.QUEUE_ADD, null);
+    public void newsContent(){
+        Intent i = new Intent(this , NewsContent.class);
+        startActivity(i);
     }
 }
 

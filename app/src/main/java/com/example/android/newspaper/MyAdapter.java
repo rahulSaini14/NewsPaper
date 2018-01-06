@@ -1,6 +1,7 @@
 package com.example.android.newspaper;
 
 import android.content.Context;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -36,14 +37,9 @@ public class MyAdapter extends ArrayAdapter<newsData> {
         ImageView image = (ImageView) ListItemview.findViewById(R.id.news_image);
 
         heading.setText(data.getTitle());
-        time.setText(timeFormat(data.getTime()));
+        time.setText(data.getTime());
         image.setImageDrawable(data.getUrlToImage());
 
         return ListItemview;
-    }
-
-    private static String timeFormat(String time) {
-        String r = time.split("T")[0] + "  " + time.split("T")[1].split("\\+")[0];
-        return r;
     }
 }

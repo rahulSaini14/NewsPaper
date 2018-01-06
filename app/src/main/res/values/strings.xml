@@ -2,7 +2,7 @@
     <string name="app_name">Newspaper</string>
     <string name="no_net">No Internet Connection</string>
     <string name="no_data">No news Available</string>
-    <string name="pop_up_listen">Click on news to listen about it.</string>
+    <string name="pop_up_details">Click on news for Details</string>
     <string name="pop_up_click">Long click to go on webpage.</string>
     <string name="owner">By : Rahul saini</string>
 
